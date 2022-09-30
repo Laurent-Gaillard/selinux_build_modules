@@ -1,0 +1,110 @@
+name: Run Generic Semodule Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      os_target:
+        description: 'Choose OS on which you want to build module '
+        required: true
+        default: ''
+        type: choice
+        options:
+        - centos8:stream
+        - centos7:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Create SELinux module from sources
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+
+      - name: Call docker build
+        id: dockerbuild
+        uses: Laurent-Gaillard/selinux_build_modules@main
+#        with:
+#          os_target: ${{ github.event.inputs.os_target }}
+      # # Use the output from the `hello` step
+      # - name: Get the output time
+      #   run: echo "The time was ${{ steps.hello.outputs.time }}"
+
+#jobs:
+#  build:
+#    name: Create RPM from spec files
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#
+#      - name: Checkout code
+#        uses: actions/checkout@master
+#
+#      - name: Checkout code from SELinux repository
+#        uses: actions/checkout@v2
+#        with:
+#          repository: ${{ github.event.inputs.github_repository }}
+#
+#
+##      - name: Prepare RPM spec file
+##        run: |
+##            version=$( echo "${{ github.ref }}" | sed -E 's,^.*/v?([0-9]+\.[0-9]+\.[0-9]+).*$,\1,' )       
+##            if [ -n "${version}" ]
+##            then
+##                sed -i -E "s,#\{version\}#,${version}," rpm/selinux_springboot.spec
+##            fi
+#
+#      - name: Prepare RPM spec file
+#        run: |
+#            sed -i -E "s,#\{version\}#,${{ github.event.inputs.version_to_build }}," ${{ github.event.inputs.path_to_spec_file }}
+#            pwd
+#            cat ${{ github.event.inputs.path_to_spec_file }}
+#
+#
+#      - name: build RPM package
+#        id: rpm_build
+#        uses: naveenrajm7/rpmbuild@master
+#        with:
+#           spec_file: "${{ github.event.inputs.path_to_spec_file }}"
+#
+#      - name: Get binary RPM package characteritics
+#        id: get_binrpm_chars
+#        run: |
+#          rpm_arch=$( awk '/^BuildArch/ { print $NF }' ${{ github.event.inputs.path_to_spec_file }} )
+#          rpm_name=$( awk '/^Name/      { print $NF }' ${{ github.event.inputs.path_to_spec_file }} )
+#          rpm_vers=$( awk '/^Version/      { print $NF }' ${{ github.event.inputs.path_to_spec_file }} )
+#          rpm_file_path=$( ls ${{ steps.rpm_build.outputs.rpm_dir_path }}/${rpm_arch}/${rpm_name}-${rpm_vers}*.${rpm_arch}.rpm )
+#          rpm_file_name=$( basename ${rpm_file_path} )
+#          rpm_vers=$( awk '/^Version/      { print $NF }' rpm/selinux_springboot.spec )   
+#          rpm_file_256sum=$( sha256sum ${rpm_file_path} | cut -d " " -f 1 )
+#          rpm_file_512sum=$( sha512sum ${rpm_file_path} | cut -d " " -f 1 )
+#          echo "::set-output name=rpm_arch::${rpm_arch}"
+#          echo "::set-output name=rpm_file_path::${rpm_file_path}"
+#          echo "::set-output name=rpm_file_name::${rpm_file_name}"
+#          echo "::set-output name=rpm_file_256sum::${rpm_file_256sum}"
+#          echo "::set-output name=rpm_file_512sum::${rpm_file_512sum}"
+#          # create checksum files
+#          id
+#          pwd
+#          ls -lR .
+#          echo "${rpm_file_256sum}" > ${rpm_file_name}.SHA256
+#          echo "${rpm_file_512sum}" > ${rpm_file_name}.SHA512
+#          ls -l
+#
+#      - name: Upload RPM
+#        uses: actions/upload-artifact@v1.0.0
+#        with:
+#          name: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}
+#          path: ${{ steps.get_binrpm_chars.outputs.rpm_file_path }}
+#
+#      - name: Upload RPM SHA256
+#        uses: actions/upload-artifact@v1.0.0
+#        with:
+#          name: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA256.txt
+#          path: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA256
+#
+#      - name: Upload RPM SHA512
+#        uses: actions/upload-artifact@v1.0.0
+#        with:
+#          name: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA512.txt
+#          path: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA512

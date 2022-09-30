@@ -1,0 +1,17 @@
+name: 'Run Semodule Build on container'
+description: 'Build SELinux modules on targeted OS'
+
+###inputs:
+###  os_target:
+###   description: 'Choose OS on which you want to build module '
+###   required: true
+###   default: ''
+#outputs:
+#  modules: # id of output
+#    description: 'The time we greeted you'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  #args:
+  #  - ${{ inputs.os_target }}
