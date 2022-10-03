@@ -9,7 +9,7 @@ on:
         default: ''
         type: choice
         options:
-        - centos8:stream
+        - centos:stream8
         - centos7:latest
 
 jobs:
@@ -21,14 +21,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@master
 
+
+      - name: List before docker call
+        run: |
+          pwd
+          ls -lR .
+
       - name: Call docker build
         id: dockerbuild
-        uses: Laurent-Gaillard/selinux_build_modules@main
-#        with:
-#          os_target: ${{ github.event.inputs.os_target }}
-      # # Use the output from the `hello` step
-      # - name: Get the output time
-      #   run: echo "The time was ${{ steps.hello.outputs.time }}"
+        uses: Laurent-Gaillard/selinux_build_modules@working-without-action
+        with:
+          os_target: ${{ github.event.inputs.os_target }}
+#      # # Use the output from the `hello` step
+#      # - name: Get the output time
+#      #   run: echo "The time was ${{ steps.hello.outputs.time }}"
+
+      - name: List after docker call
+        run: |
+          pwd
+          ls -lR .
+
+      - name: Upload RPM
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: springboot-selinux-1-1.noarch.rpm
+          path: ./rpmbuild/RPMS/noarch/springboot-selinux-1-1.noarch.rpm
 
 #jobs:
 #  build:
