@@ -2,7 +2,7 @@
 
 Name:      springboot-selinux
 Version:   1
-Release:   1
+Release:   1%{?dist}
 Summary:   SELinux policy module for Springboot applications
 License:   GPLv2
 URL:       https://github.com/hubertqc/selinux_springboot

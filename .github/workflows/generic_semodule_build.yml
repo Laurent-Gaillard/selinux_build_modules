@@ -4,13 +4,28 @@ on:
   workflow_dispatch:
     inputs:
       os_target:
-        description: 'Choose OS on which you want to build module '
+        description: 'Choose OS on which you want to build module'
         required: true
         default: ''
         type: choice
         options:
-        - centos:stream8
-        - centos7:latest
+        - centos_stream8
+        - centos_7
+      spec_file_location:
+        description: 'Give the relative path of the SPEC file'
+        required: true
+        default: ''
+      selinux_files_location:
+        description: 'Give the relative path of the SELinux files'
+        required: true
+        default: ''
+
+env:
+  OS_TARGET: "${{ inputs.os_target }}"
+
+defaults:
+  run:
+    working-directory: actions/centos_stream8
 
 jobs:
   build:
@@ -21,31 +36,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@master
 
-
       - name: List before docker call
         run: |
           pwd
           ls -lR .
+          echo "target is :  $OS_TARGET --- "
 
       - name: Call docker build
         id: dockerbuild
+###       #if: ${{ env.OS_TARGET == 'centos_stream8' }}
+###       ##uses: Laurent-Gaillard/selinux_build_modules/actions/centos_stream8@working-without-action
         uses: Laurent-Gaillard/selinux_build_modules@working-without-action
         with:
-          os_target: ${{ github.event.inputs.os_target }}
-#      # # Use the output from the `hello` step
-#      # - name: Get the output time
-#      #   run: echo "The time was ${{ steps.hello.outputs.time }}"
+          #configuration-path: ./actions/centos_stream8/action.yml
+          spec_file_location: ${{ github.event.inputs.spec_file_location }}
+          selinux_files_location: ${{ github.event.inputs.selinux_files_location }}
 
-      - name: List after docker call
-        run: |
-          pwd
-          ls -lR .
-
-      - name: Upload RPM
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: springboot-selinux-1-1.noarch.rpm
-          path: ./rpmbuild/RPMS/noarch/springboot-selinux-1-1.noarch.rpm
+###
+###      - name: List after docker call
+###        run: |
+###          pwd
+###          ls -lR .
+###
+###      - name: Upload RPM
+###        uses: actions/upload-artifact@v1.0.0
+###        with:
+###          name: springboot-selinux-1-1.noarch.rpm
+###          path: ./rpmbuild/RPMS/noarch/springboot-selinux-1-1.noarch.rpm
 
 #jobs:
 #  build:
