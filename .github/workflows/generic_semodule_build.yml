@@ -8,9 +8,6 @@ on:
         required: true
         default: ''
         type: choice
-        options:
-        - centos_stream8
-        - centos_7
       spec_file_location:
         description: 'Give the relative path of the SPEC file'
         required: true
@@ -35,14 +32,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
+        
+      - name: Checkout action from laurent-gaillard actions repository
+        uses: actions/checkout@master
+        with:
+          repository: Laurent-Gaillard/actions
+          ref: ${{ matrix.os }}
+          path: ACTIONS
 
       - name: Call docker build
         id: dockerbuild
-        uses: Laurent-Gaillard/actions/${{ matrix.os }}@working-without-action
+        uses: ./ACTIONS
         with:
           spec_file_location: ${{ github.event.inputs.spec_file_location }}
           selinux_files_location: ${{ github.event.inputs.selinux_files_location }}
-
 
 ###
 ###      - name: List after docker call
