@@ -23,10 +23,6 @@ on:
 env:
   OS_TARGET: "${{ inputs.os_target }}"
 
-defaults:
-  run:
-    working-directory: actions/centos_stream8
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,21 +32,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@master
 
+      - name: Checkout action from laurent-gaillard actions repository
+        uses: actions/checkout@master
+        with:
+          repository: Laurent-Gaillard/actions
+          ref: main
+          path: .
+
       - name: List before docker call
         run: |
+          mkdir actions
+          cp ${{ env.OS_TARGET}}/* actions/.
           pwd
           ls -lR .
           echo "target is :  $OS_TARGET --- "
 
       - name: Call docker build
         id: dockerbuild
-###       #if: ${{ env.OS_TARGET == 'centos_stream8' }}
-###       ##uses: Laurent-Gaillard/selinux_build_modules/actions/centos_stream8@working-without-action
-        uses: Laurent-Gaillard/selinux_build_modules@working-without-action
+        uses: ./actions
         with:
-          #configuration-path: ./actions/centos_stream8/action.yml
           spec_file_location: ${{ github.event.inputs.spec_file_location }}
           selinux_files_location: ${{ github.event.inputs.selinux_files_location }}
+####       #if: ${{ env.OS_TARGET == 'centos_stream8' }}
+####       ##uses: Laurent-Gaillard/selinux_build_modules/actions/centos_stream8@working-without-action
+        #uses: Laurent-Gaillard/selinux_build_modules@working-without-action
+
 
 ###
 ###      - name: List after docker call
