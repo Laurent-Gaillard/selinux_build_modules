@@ -1,5 +1,3 @@
-%define    _topdir /github/workspace/rpmbuild
-
 Name:      springboot-selinux
 Version:   1
 Release:   1%{?dist}
@@ -24,14 +22,14 @@ The Springboot application will run in the springboot_t domain.
 %{__rm} -rf %{buildroot}
 
 %build
-make -f /usr/share/selinux/devel/Makefile -C $RPM_SOURCE_DIR  springboot.pp
+make -f /usr/share/selinux/devel/Makefile -C %{_sourcedir}  springboot.pp
 
 %install
 mkdir -p -m 0755 %{buildroot}/usr/share/selinux/packages/targeted
 mkdir -p -m 0755 %{buildroot}/usr/share/selinux/devel/include/apps
-install -m 0444 $RPM_SOURCE_DIR/springboot.if %{buildroot}/usr/share/selinux/devel/include/apps/springboot.if
-cd $RPM_SOURCE_DIR && bzip2 springboot.pp
-install -m 0444 $RPM_SOURCE_DIR/springboot.pp.bz2 %{buildroot}/usr/share/selinux/packages/targeted/springboot.pp.bz2
+install -m 0444 %{_sourcedir}/springboot.if %{buildroot}/usr/share/selinux/devel/include/apps/springboot.if
+cd %{_sourcedir} && bzip2 springboot.pp
+install -m 0444 %{_sourcedir}/springboot.pp.bz2 %{buildroot}/usr/share/selinux/packages/targeted/springboot.pp.bz2
 
 %post
 bzcat -dc /usr/share/selinux/packages/targeted/springboot.pp.bz2 >> /usr/share/selinux/packages/targeted/springboot.pp

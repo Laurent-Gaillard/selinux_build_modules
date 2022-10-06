@@ -1,144 +1,103 @@
 name: Run Generic Semodule Build
 
-on:
-  workflow_dispatch:
+on: 
+  workflow_call:
     inputs:
-      os_target:
-        description: 'Choose OS on which you want to build module'
-        required: true
-        default: ''
-        type: choice
-        options:
-        - centos_stream8
-        - centos_7
       spec_file_location:
-        description: 'Give the relative path of the SPEC file'
+        description: 'Provides the relative path to the source_repository of the SPEC file'
         required: true
         default: ''
+        type: string
       selinux_files_location:
-        description: 'Give the relative path of the SELinux files'
+        description: 'Provides the relative path to the source_repository of the SELinux files'
         required: true
         default: ''
-
-env:
-  OS_TARGET: "${{ inputs.os_target }}"
-
-defaults:
-  run:
-    working-directory: actions/centos_stream8
+        type: string
+      build_os_matrix:
+        description: 'Provides the relative path of the SELinux files'
+        required: false
+        default: '[ "centos_7", "centos_stream8", "centos_stream9", "fedora_36" ]'
+        type: string
+      release_upload_url:
+        description: 'Provides the URL to upload the built rpm to the provided release'
+        required: false
+        default: ''
+        type: string
+      provided_version:
+        description: 'RPM version if parameter'
+        required: false
+        type: string
+      provided_release:
+        description: 'RPM release if parameter'
+        required: false
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
     name: Create SELinux module from sources
 
+    strategy:
+      matrix: 
+        os: ${{ fromJSON(inputs.build_os_matrix) }}
+        #os: [ centos_7 ]
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@master
-
-      - name: List before docker call
-        run: |
-          pwd
-          ls -lR .
-          echo "target is :  $OS_TARGET --- "
+        continue-on-error: ${{ matrix.os }}
+        
+      - name: Checkout action from laurent-gaillard actions repository
+        uses: actions/checkout@master
+        with:
+          repository: Laurent-Gaillard/actions
+          ref: ${{ matrix.os }}
+          path: ACTIONS
 
       - name: Call docker build
         id: dockerbuild
-###       #if: ${{ env.OS_TARGET == 'centos_stream8' }}
-###       ##uses: Laurent-Gaillard/selinux_build_modules/actions/centos_stream8@working-without-action
-        uses: Laurent-Gaillard/selinux_build_modules@working-without-action
+        uses: ./ACTIONS
         with:
-          #configuration-path: ./actions/centos_stream8/action.yml
-          spec_file_location: ${{ github.event.inputs.spec_file_location }}
-          selinux_files_location: ${{ github.event.inputs.selinux_files_location }}
+          spec_file_location: ${{ inputs.spec_file_location }}
+          selinux_files_location: ${{ inputs.selinux_files_location }}
+          provided_version: ${{ inputs.provided_version }}
+          provided_release: ${{ inputs.provided_release }}
 
-###
-###      - name: List after docker call
-###        run: |
-###          pwd
-###          ls -lR .
-###
-###      - name: Upload RPM
-###        uses: actions/upload-artifact@v1.0.0
-###        with:
-###          name: springboot-selinux-1-1.noarch.rpm
-###          path: ./rpmbuild/RPMS/noarch/springboot-selinux-1-1.noarch.rpm
+      - name: Upload rpms
+        id: upload_rpms
+        run: |
+          UPLOAD_URL=$(sed -e 's/{?name,label}/?name/' <<< '${{ inputs.release_upload_url }}')
 
-#jobs:
-#  build:
-#    name: Create RPM from spec files
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#
-#      - name: Checkout code
-#        uses: actions/checkout@master
-#
-#      - name: Checkout code from SELinux repository
-#        uses: actions/checkout@v2
-#        with:
-#          repository: ${{ github.event.inputs.github_repository }}
-#
-#
-##      - name: Prepare RPM spec file
-##        run: |
-##            version=$( echo "${{ github.ref }}" | sed -E 's,^.*/v?([0-9]+\.[0-9]+\.[0-9]+).*$,\1,' )       
-##            if [ -n "${version}" ]
-##            then
-##                sed -i -E "s,#\{version\}#,${version}," rpm/selinux_springboot.spec
-##            fi
-#
-#      - name: Prepare RPM spec file
-#        run: |
-#            sed -i -E "s,#\{version\}#,${{ github.event.inputs.version_to_build }}," ${{ github.event.inputs.path_to_spec_file }}
-#            pwd
-#            cat ${{ github.event.inputs.path_to_spec_file }}
-#
-#
-#      - name: build RPM package
-#        id: rpm_build
-#        uses: naveenrajm7/rpmbuild@master
-#        with:
-#           spec_file: "${{ github.event.inputs.path_to_spec_file }}"
-#
-#      - name: Get binary RPM package characteritics
-#        id: get_binrpm_chars
-#        run: |
-#          rpm_arch=$( awk '/^BuildArch/ { print $NF }' ${{ github.event.inputs.path_to_spec_file }} )
-#          rpm_name=$( awk '/^Name/      { print $NF }' ${{ github.event.inputs.path_to_spec_file }} )
-#          rpm_vers=$( awk '/^Version/      { print $NF }' ${{ github.event.inputs.path_to_spec_file }} )
-#          rpm_file_path=$( ls ${{ steps.rpm_build.outputs.rpm_dir_path }}/${rpm_arch}/${rpm_name}-${rpm_vers}*.${rpm_arch}.rpm )
-#          rpm_file_name=$( basename ${rpm_file_path} )
-#          rpm_vers=$( awk '/^Version/      { print $NF }' rpm/selinux_springboot.spec )   
-#          rpm_file_256sum=$( sha256sum ${rpm_file_path} | cut -d " " -f 1 )
-#          rpm_file_512sum=$( sha512sum ${rpm_file_path} | cut -d " " -f 1 )
-#          echo "::set-output name=rpm_arch::${rpm_arch}"
-#          echo "::set-output name=rpm_file_path::${rpm_file_path}"
-#          echo "::set-output name=rpm_file_name::${rpm_file_name}"
-#          echo "::set-output name=rpm_file_256sum::${rpm_file_256sum}"
-#          echo "::set-output name=rpm_file_512sum::${rpm_file_512sum}"
-#          # create checksum files
-#          id
-#          pwd
-#          ls -lR .
-#          echo "${rpm_file_256sum}" > ${rpm_file_name}.SHA256
-#          echo "${rpm_file_512sum}" > ${rpm_file_name}.SHA512
-#          ls -l
-#
-#      - name: Upload RPM
-#        uses: actions/upload-artifact@v1.0.0
-#        with:
-#          name: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}
-#          path: ${{ steps.get_binrpm_chars.outputs.rpm_file_path }}
-#
-#      - name: Upload RPM SHA256
-#        uses: actions/upload-artifact@v1.0.0
-#        with:
-#          name: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA256.txt
-#          path: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA256
-#
-#      - name: Upload RPM SHA512
-#        uses: actions/upload-artifact@v1.0.0
-#        with:
-#          name: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA512.txt
-#          path: ${{ steps.get_binrpm_chars.outputs.rpm_file_name }}.SHA512
+          for rpm in $(find rpmbuild/RPMS -type f -name *.rpm)
+          do 
+            RPM_FILE_NAME=$(basename ${rpm})
+            sha256sum ${rpm} | cut -d " " -f 1 > ${RPM_FILE_NAME}.SHA256
+            sha512sum ${rpm} | cut -d " " -f 1 > ${RPM_FILE_NAME}.SHA512
+
+            #Upload RPM
+            curl \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              -T ${rpm} \
+              ${UPLOAD_URL}=${RPM_FILE_NAME}
+
+            #Upload sha256sum
+            curl \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: text/plain" \
+              -T ${RPM_FILE_NAME}.SHA256 \
+              ${UPLOAD_URL}=${RPM_FILE_NAME}.SHA256
+
+            #Upload sha512sum
+            curl \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: text/plain" \
+              -T ${RPM_FILE_NAME}.SHA512 \
+              ${UPLOAD_URL}=${RPM_FILE_NAME}.SHA512
+          done
