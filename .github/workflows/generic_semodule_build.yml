@@ -3,11 +3,6 @@ name: Run Generic Semodule Build
 on:
   workflow_dispatch:
     inputs:
-      os_target:
-        description: 'Choose OS on which you want to build module'
-        required: true
-        default: ''
-        type: choice
       spec_file_location:
         description: 'Give the relative path of the SPEC file'
         required: true
