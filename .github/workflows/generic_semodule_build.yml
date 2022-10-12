@@ -40,12 +40,13 @@ jobs:
     strategy:
       matrix: 
         os: ${{ fromJSON(inputs.build_os_matrix) }}
-        #os: [ centos_7 ]
       
     steps:
       - name: Checkout code
         uses: actions/checkout@master
         continue-on-error: ${{ matrix.os }}
+        with:
+          path: SOURCE_REPO
         
       - name: Checkout action from laurent-gaillard actions repository
         uses: actions/checkout@master
@@ -58,11 +59,12 @@ jobs:
         id: dockerbuild
         uses: ./ACTIONS
         with:
+          source_repo_location: SOURCE_REPO
           spec_file_location: ${{ inputs.spec_file_location }}
           selinux_files_location: ${{ inputs.selinux_files_location }}
           provided_version: ${{ inputs.provided_version }}
           provided_release: ${{ inputs.provided_release }}
-
+          
       - name: Upload rpms
         id: upload_rpms
         run: |
