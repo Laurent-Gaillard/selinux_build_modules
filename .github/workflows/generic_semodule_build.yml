@@ -3,6 +3,11 @@ name: Run Generic Semodule Build
 on: 
   workflow_call:
     inputs:
+      source_repo_location:
+        description: 'Provides the directory where the source repository was checked out'
+        required: false
+        default: 'SOURCE_REPO'
+        type: string
       spec_file_location:
         description: 'Provides the relative path to the source_repository of the SPEC file'
         required: true
@@ -46,7 +51,7 @@ jobs:
         uses: actions/checkout@master
         continue-on-error: ${{ matrix.os }}
         with:
-          path: SOURCE_REPO
+          path: ${{ inputs.source_repo_location }}
         
       - name: Checkout action from laurent-gaillard actions repository
         uses: actions/checkout@master
@@ -59,7 +64,7 @@ jobs:
         id: dockerbuild
         uses: ./ACTIONS
         with:
-          source_repo_location: SOURCE_REPO
+          source_repo_location: ${{ inputs.source_repo_location }}
           spec_file_location: ${{ inputs.spec_file_location }}
           selinux_files_location: ${{ inputs.selinux_files_location }}
           provided_version: ${{ inputs.provided_version }}
@@ -73,7 +78,6 @@ jobs:
           for rpm in $(find rpmbuild/RPMS -type f -name *.rpm)
           do 
             RPM_FILE_NAME=$(basename ${rpm})
-            sha256sum ${rpm} | cut -d " " -f 1 > ${RPM_FILE_NAME}.SHA256
             sha512sum ${rpm} | cut -d " " -f 1 > ${RPM_FILE_NAME}.SHA512
 
             #Upload RPM
@@ -84,15 +88,6 @@ jobs:
               -H "Content-Type: application/octet-stream" \
               -T ${rpm} \
               ${UPLOAD_URL}=${RPM_FILE_NAME}
-
-            #Upload sha256sum
-            curl \
-              -X POST \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Content-Type: text/plain" \
-              -T ${RPM_FILE_NAME}.SHA256 \
-              ${UPLOAD_URL}=${RPM_FILE_NAME}.SHA256
 
             #Upload sha512sum
             curl \
