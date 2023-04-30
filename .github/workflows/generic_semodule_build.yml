@@ -21,7 +21,7 @@ on:
       build_os_matrix:
         description: 'Provides the relative path of the SELinux files'
         required: false
-        default: '[ "centos_7", "centos_stream8", "centos_stream9", "fedora_36", "fedora37", "fedora38" ]'
+        default: '[ "centos_7", "centos_stream8", "centos_stream9", "fedora_36", "fedora_37", "fedora_38" ]'
         type: string
       release_upload_url:
         description: 'Provides the URL to upload the built rpm to the provided release'
